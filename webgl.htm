@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL & CSS エフェクト比較レポート</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080f;
+      --surface: #0d1020;
+      --card: #0f1525;
+      --border: #1e2840;
+      --border-bright: #2d3f70;
+      --text: #dde2f3;
+      --text-muted: #6a7499;
+      --text-dim: #3d4870;
+      --curtains: #a78bfa;
+      --curtains-dim: #4c2d9e;
+      --pixi: #60a5fa;
+      --pixi-dim: #1e3a8a;
+      --jquery: #34d399;
+      --jquery-dim: #065f46;
+      --css: #fb923c;
+      --css-dim: #9a3412;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      min-height: 100vh;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      line-break: strict;
+    }
+    p, li, td, th, .lib-desc, .sh-sub, .summary-box p, .rec-card p, .pc-card li {
+      overflow-wrap: break-word;
+      word-break: keep-all;
+      line-break: strict;
+    }
+
+    /* grain overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7,8,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; gap: 1.5rem;
+      height: 52px;
+    }
+    .nav-logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: var(--text-muted);
+      white-space: nowrap; letter-spacing: 0.05em;
+    }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; margin-left: auto; }
+    .nav-links a {
+      font-size: 0.78rem; color: var(--text-muted);
+      text-decoration: none; padding: 0.3rem 0.65rem;
+      border-radius: 5px; transition: all 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface); }
+    .nav-dot {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; margin-right: 5px; vertical-align: middle;
+    }
+
+    /* LAYOUT */
+    main { max-width: 1080px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+    section { padding: 5rem 0; border-bottom: 1px solid var(--border); }
+    section:last-of-type { border-bottom: none; }
+
+    /* HERO */
+    .hero { padding: 7rem 0 5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem; color: var(--text-muted);
+      letter-spacing: 0.2em; text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: 800; line-height: 1.05;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    .hero-title .grad {
+      background: linear-gradient(130deg, var(--curtains) 0%, var(--pixi) 60%, var(--jquery) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: 1rem; color: var(--text-muted);
+      max-width: 560px; margin: 0 auto 2.5rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .hero-chips {
+      display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .chip {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+      padding: 0.28rem 0.75rem; border-radius: 100px; border: 1px solid;
+      display: inline-flex; align-items: center;
+    }
+    .chip-c { color: var(--curtains); border-color: var(--curtains-dim); background: rgba(167,139,250,0.06); }
+    .chip-p { color: var(--pixi);     border-color: var(--pixi-dim);     background: rgba(96,165,250,0.06); }
+    .chip-j { color: var(--jquery);   border-color: var(--jquery-dim);   background: rgba(52,211,153,0.06); }
+    .chip-s { color: var(--css);      border-color: var(--css-dim);      background: rgba(251,146,60,0.06); }
+
+    /* SECTION HEADER */
+    .sh { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; }
+    .sh-num { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim); }
+    .sh-title { font-family: 'Syne', sans-serif; font-size: 1.7rem; font-weight: 700; }
+    .sh-sub { font-size: 0.88rem; color: var(--text-muted); margin-top: 0.3rem; margin-bottom: 2rem; }
+
+    /* OVERVIEW GRID */
+    .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .lib-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; position: relative;
+      overflow: hidden; transition: transform 0.2s, border-color 0.2s;
+    }
+    .lib-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .lib-card.c-c::before { background: var(--curtains); }
+    .lib-card.c-p::before { background: var(--pixi); }
+    .lib-card.c-j::before { background: var(--jquery); }
+    .lib-card.c-s::before { background: var(--css); }
+    .lib-card:hover { transform: translateY(-2px); }
+    .lib-card.c-c:hover { border-color: var(--curtains-dim); }
+    .lib-card.c-p:hover { border-color: var(--pixi-dim); }
+    .lib-card.c-j:hover { border-color: var(--jquery-dim); }
+    .lib-card.c-s:hover { border-color: var(--css-dim); }
+    .lc-name {
+      font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+    .c-c .lc-name { color: var(--curtains); }
+    .c-p .lc-name { color: var(--pixi); }
+    .c-j .lc-name { color: var(--jquery); }
+    .c-s .lc-name { color: var(--css); }
+    .lc-type {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 1.1rem;
+    }
+    .stat-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.45rem; }
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+      color: var(--text-muted); width: 88px; flex-shrink: 0;
+    }
+    .stat-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .stat-fill { height: 100%; border-radius: 2px; }
+    .c-c .stat-fill { background: var(--curtains); }
+    .c-p .stat-fill { background: var(--pixi); }
+    .c-j .stat-fill { background: var(--jquery); }
+    .c-s .stat-fill { background: var(--css); }
+    .stat-val {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.66rem;
+      color: var(--text-muted); width: 22px; text-align: right;
+    }
+
+    /* COMPARISON TABLE */
+    .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .tbl {
+      width: 100%; border-collapse: collapse; font-size: 0.85rem;
+    }
+    .tbl th, .tbl td {
+      padding: 0.85rem 1.1rem; text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl thead th {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: 0.04em;
+      background: var(--surface);
+    }
+    .tbl th:first-child, .tbl td:first-child {
+      text-align: left; color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    }
+    .tbl tbody tr:hover { background: rgba(255,255,255,0.015); }
+    .th-c { color: var(--curtains); }
+    .th-p { color: var(--pixi); }
+    .th-j { color: var(--jquery); }
+    .th-s { color: var(--css); }
+    .dots { display: inline-flex; gap: 3px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot.on { background: currentColor; }
+    .dot.off { background: var(--border); }
+    .badge {
+      display: inline-block; padding: 2px 7px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.67rem;
+    }
+    .by { background: rgba(52,211,153,0.12); color: #34d399; }
+    .bn { background: rgba(239,68,68,0.12); color: #f87171; }
+    .bp { background: rgba(251,191,36,0.12); color: #fbbf24; }
+
+    /* DETAIL SECTIONS */
+    .detail-header {
+      display: flex; align-items: flex-start;
+      gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .approach-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.25rem 0.75rem; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; border: 1px solid;
+    }
+    .ab-c { color: var(--curtains); border-color: var(--curtains-dim); background: rgba(167,139,250,0.07); }
+    .ab-p { color: var(--pixi);     border-color: var(--pixi-dim);     background: rgba(96,165,250,0.07); }
+    .ab-j { color: var(--jquery);   border-color: var(--jquery-dim);   background: rgba(52,211,153,0.07); }
+    .ab-s { color: var(--css);      border-color: var(--css-dim);      background: rgba(251,146,60,0.07); }
+    .lib-title {
+      font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .lib-title.tc { color: var(--curtains); }
+    .lib-title.tp { color: var(--pixi); }
+    .lib-title.tj { color: var(--jquery); }
+    .lib-title.ts { color: var(--css); }
+    .lib-desc { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem; max-width: 700px; }
+
+    /* CODE BLOCK */
+    .cb {
+      background: #080e1c; border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; margin: 1.25rem 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    }
+    .cb-head {
+      background: var(--surface); padding: 0.55rem 1rem;
+      font-size: 0.7rem; color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .cb-dots { display: flex; gap: 4px; }
+    .cb-dot { width: 10px; height: 10px; border-radius: 50%; }
+    pre { padding: 1.2rem; overflow-x: auto; line-height: 1.7; }
+    code { color: #9ba8cc; }
+    .kw  { color: #c678dd; }
+    .fn  { color: #61afef; }
+    .str { color: #98c379; }
+    .num { color: #d19a66; }
+    .cm  { color: #4b5577; font-style: italic; }
+    .prop{ color: #e06c75; }
+
+    /* PRO/CON GRID */
+    .pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.25rem 0; }
+    @media (max-width: 640px) { .pc-grid { grid-template-columns: 1fr; } }
+    .pc-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem;
+    }
+    .pc-card h4 {
+      font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 700; margin-bottom: 0.7rem;
+    }
+    .pc-pro h4 { color: #34d399; }
+    .pc-con h4 { color: #f87171; }
+    .pc-card ul { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+    .pc-card li { font-size: 0.83rem; color: var(--text-muted); padding-left: 1.2rem; position: relative; }
+    .pc-card li::before { content: '—'; position: absolute; left: 0; }
+    .pc-pro li::before { color: #34d399; }
+    .pc-con li::before { color: #f87171; }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: linear-gradient(to right, var(--border-bright), transparent); margin: 3rem 0; }
+
+    /* RECOMMEND */
+    .rec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+    .rec-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem;
+    }
+    .rec-card h4 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .rec-card p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .rec-lib {
+      display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 700;
+    }
+
+    /* SUMMARY BOX */
+    .summary-box {
+      margin-top: 2.5rem; padding: 1.75rem;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .summary-box h4 {
+      font-family: 'Syne', sans-serif; font-size: 1rem; margin-bottom: 1rem; color: var(--text);
+    }
+    .summary-box p { font-size: 0.86rem; color: var(--text-muted); line-height: 1.9; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border); padding: 2rem;
+      text-align: center; position: relative; z-index: 1;
+    }
+    footer p { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); }
+
+    /* ANIMATION */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* === ページ内で実際に使うCSS技術 === */
+
+    /* ① @keyframes 波紋リング — ヒーローセクションに実装 */
+    @keyframes cssRipple {
+      0%   { transform: translate(-50%,-50%) scale(0.1); opacity: 0.8; }
+      100% { transform: translate(-50%,-50%) scale(5);   opacity: 0; }
+    }
+    .hero-ring {
+      position: absolute; top: 50%; left: 50%;
+      width: 260px; height: 260px;
+      border-radius: 50%; pointer-events: none;
+      border: 1px solid rgba(167,139,250,0.2);
+      animation: cssRipple 7s ease-out infinite;
+    }
+    .hero-ring:nth-child(2) { animation-delay: 2.3s; border-color: rgba(96,165,250,0.15); }
+    .hero-ring:nth-child(3) { animation-delay: 4.6s; border-color: rgba(52,211,153,0.12); }
+
+    /* ② JS canvas ripple — ヒーローにマウス追従で描画 */
+    #hero-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; mix-blend-mode: screen; opacity: 0.55;
+    }
+
+    /* ③ backdrop-filter — カードにガラス効果 */
+    .pc-card    { backdrop-filter: blur(4px) saturate(130%); }
+    .summary-box { backdrop-filter: blur(6px) saturate(130%); }
+    .rec-card   { backdrop-filter: blur(4px) saturate(120%); }
+
+    /* CSS技術ライブプレビューカード */
+    .css-live-demos {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem; margin: 1.5rem 0;
+    }
+    .css-live-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden;
+    }
+    .css-live-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+      color: var(--css); padding: 0.5rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(251,146,60,0.05);
+    }
+    .css-live-preview {
+      height: 120px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+
+    /* プレビュー① @keyframes */
+    .preview-kf { background: radial-gradient(ellipse at center, rgba(167,139,250,0.08) 0%, transparent 70%); }
+    @keyframes previewRipple {
+      0%   { transform: scale(0.2); opacity: 1; }
+      100% { transform: scale(3);   opacity: 0; }
+    }
+    .preview-kf .p-ring {
+      position: absolute; width: 50px; height: 50px;
+      border-radius: 50%; border: 1.5px solid var(--curtains);
+      animation: previewRipple 2.5s ease-out infinite;
+    }
+    .preview-kf .p-ring:nth-child(2) { animation-delay: 0.83s; border-color: var(--pixi); }
+    .preview-kf .p-ring:nth-child(3) { animation-delay: 1.66s; border-color: var(--jquery); }
+
+    /* プレビュー② backdrop-filter */
+    .preview-bd {
+      background: linear-gradient(135deg,
+        rgba(167,139,250,0.3) 0%, rgba(96,165,250,0.3) 50%, rgba(52,211,153,0.2) 100%);
+    }
+    .preview-bd::before {
+      content: ''; position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px) saturate(180%) brightness(110%);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .preview-bd-text {
+      position: relative; z-index: 1;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: rgba(255,255,255,0.7);
+    }
+
+    /* プレビュー③ SVG feTurbulence */
+    .preview-svgf {
+      background: linear-gradient(135deg, rgba(251,146,60,0.15) 0%, rgba(251,146,60,0.05) 100%);
+    }
+    .preview-svgf-text {
+      font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+      color: var(--css); filter: url(#pageLiquid);
+      letter-spacing: 0.05em;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    /* DEMO SECTION */
+    .demo-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .demo-tab {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.77rem;
+      padding: 0.45rem 1rem; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; gap: 0.45rem;
+      transition: all 0.2s;
+    }
+    .demo-tab:hover { color: var(--text); border-color: var(--border-bright); }
+    .demo-tab.active.tab-c { border-color: var(--curtains); color: var(--curtains); background: rgba(167,139,250,0.07); }
+    .demo-tab.active.tab-p { border-color: var(--pixi);     color: var(--pixi);     background: rgba(96,165,250,0.07); }
+    .demo-tab.active.tab-j { border-color: var(--jquery);   color: var(--jquery);   background: rgba(52,211,153,0.07); }
+    .demo-frame-wrap {
+      position: relative; width: 100%; height: 68vh; min-height: 420px;
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; background: #000;
+    }
+    #demo-frame {
+      width: 100%; height: 100%; border: none; display: block;
+      transition: opacity 0.25s;
+    }
+    #demo-frame.fading { opacity: 0; pointer-events: none; }
+    .demo-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.8rem 1rem;
+      background: linear-gradient(to top, rgba(7,8,15,0.8) 0%, transparent 100%);
+      display: flex; align-items: center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .demo-hint {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.67rem;
+      color: rgba(255,255,255,0.35);
+    }
+    .demo-open {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.67rem;
+      color: var(--text-muted); background: rgba(7,8,15,0.65);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 0.25rem 0.65rem; text-decoration: none;
+      pointer-events: all; transition: color 0.15s, border-color 0.15s;
+      backdrop-filter: blur(6px);
+    }
+    .demo-open:hover { color: var(--text); border-color: var(--border-bright); }
+    .demo-loading {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--bg); opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .demo-loading.show { opacity: 1; pointer-events: all; }
+    .demo-spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--border); border-top-color: var(--text-muted);
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- SVG フィルター定義（feTurbulence / CSSセクションのライブデモで使用） -->
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <filter id="pageLiquid" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="5" result="noise">
+        <animate attributeName="baseFrequency" values="0.014;0.024;0.014" dur="5s" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<nav>
+  <span class="nav-logo">// webgl-survey</span>
+  <ul class="nav-links">
+    <li><a href="#demos">Demo</a></li>
+    <li><a href="#overview">概要</a></li>
+    <li><a href="#matrix">比較表</a></li>
+    <li><a href="#js">JS 詳細</a></li>
+    <li><a href="#css">CSS</a></li>
+    <li><a href="#rec">推奨</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <!-- ② JS canvas ripple — マウス追従の波紋（JavaScriptで実装） -->
+    <canvas id="hero-canvas"></canvas>
+    <!-- ① CSS @keyframes 波紋リング — 同心円アニメーション -->
+    <span class="hero-ring"></span>
+    <span class="hero-ring"></span>
+    <span class="hero-ring"></span>
+    <p class="hero-eyebrow">WebGL &amp; CSS — エフェクト検証レポート</p>
+    <h1 class="hero-title">
+      <span class="grad">WebGL × CSS</span><br>
+      ライブラリ比較
+    </h1>
+    <p class="hero-desc">
+      水面波紋エフェクトを題材に、JS/WebGL系ライブラリ 3種と CSS 系アプローチを
+      セットアップ・パフォーマンス・カスタマイズ性など多角的に比較します。
+    </p>
+    <div class="hero-chips">
+      <span class="chip chip-c"><span class="nav-dot" style="background:var(--curtains)"></span>Curtains.js</span>
+      <span class="chip chip-p"><span class="nav-dot" style="background:var(--pixi)"></span>PixiJS</span>
+      <span class="chip chip-j"><span class="nav-dot" style="background:var(--jquery)"></span>jQuery Ripples</span>
+      <span class="chip chip-s"><span class="nav-dot" style="background:var(--css)"></span>CSS Only</span>
+    </div>
+  </section>
+
+  <!-- DEMOS -->
+  <section id="demos" class="reveal">
+    <div class="sh"><span class="sh-num">00</span><h2 class="sh-title">ライブ デモ</h2></div>
+    <p class="sh-sub">実装済みの3つのデモを実際に操作できます。マウス / タッチで波紋を起こしてください。</p>
+
+    <div class="demo-tabs">
+      <button class="demo-tab active tab-c" data-src="curtainsjs/index.html">
+        <span class="nav-dot" style="background:var(--curtains)"></span>Curtains.js
+      </button>
+      <button class="demo-tab tab-p" data-src="pixijs/index.html">
+        <span class="nav-dot" style="background:var(--pixi)"></span>PixiJS
+      </button>
+      <button class="demo-tab tab-j" data-src="jquery-ripples/index.html">
+        <span class="nav-dot" style="background:var(--jquery)"></span>jQuery Ripples
+      </button>
+    </div>
+
+    <div class="demo-frame-wrap">
+      <iframe id="demo-frame" src="curtainsjs/index.html" title="WebGL Live Demo"></iframe>
+      <div class="demo-loading" id="demo-loading"><div class="demo-spinner"></div></div>
+      <div class="demo-bar">
+        <span class="demo-hint">↖ マウスを動かして波紋をインタラクション</span>
+        <a id="demo-open" class="demo-open" href="curtainsjs/index.html" target="_blank">↗ 新しいタブで開く</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section id="overview" class="reveal">
+    <div class="sh"><span class="sh-num">01</span><h2 class="sh-title">ライブラリ概要</h2></div>
+    <p class="sh-sub">各アプローチの技術カテゴリとキースコアを一覧します。</p>
+
+    <div class="overview-grid">
+      <div class="lib-card c-c reveal">
+        <div class="lc-name">Curtains.js</div>
+        <div class="lc-type">WebGL DOM Wrapper</div>
+        <div class="stat-row"><span class="stat-label">セットアップ</span><div class="stat-bar"><div class="stat-fill" style="width:40%"></div></div><span class="stat-val">2/5</span></div>
+        <div class="stat-row"><span class="stat-label">カスタマイズ</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div><span class="stat-val">5/5</span></div>
+        <div class="stat-row"><span class="stat-label">パフォーマンス</span><div class="stat-bar"><div class="stat-fill" style="width:80%"></div></div><span class="stat-val">4/5</span></div>
+        <div class="stat-row"><span class="stat-label">DOM 統合</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div><span class="stat-val">5/5</span></div>
+      </div>
+
+      <div class="lib-card c-p reveal">
+        <div class="lc-name">PixiJS</div>
+        <div class="lc-type">2D Rendering Engine</div>
+        <div class="stat-row"><span class="stat-label">セットアップ</span><div class="stat-bar"><div class="stat-fill" style="width:60%"></div></div><span class="stat-val">3/5</span></div>
+        <div class="stat-row"><span class="stat-label">カスタマイズ</span><div class="stat-bar"><div class="stat-fill" style="width:80%"></div></div><span class="stat-val">4/5</span></div>
+        <div class="stat-row"><span class="stat-label">パフォーマンス</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div><span class="stat-val">5/5</span></div>
+        <div class="stat-row"><span class="stat-label">DOM 統合</span><div class="stat-bar"><div class="stat-fill" style="width:40%"></div></div><span class="stat-val">2/5</span></div>
+      </div>
+
+      <div class="lib-card c-j reveal">
+        <div class="lc-name">jQuery Ripples</div>
+        <div class="lc-type">jQuery Plugin (WebGL)</div>
+        <div class="stat-row"><span class="stat-label">セットアップ</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div><span class="stat-val">5/5</span></div>
+        <div class="stat-row"><span class="stat-label">カスタマイズ</span><div class="stat-bar"><div class="stat-fill" style="width:40%"></div></div><span class="stat-val">2/5</span></div>
+        <div class="stat-row"><span class="stat-label">パフォーマンス</span><div class="stat-bar"><div class="stat-fill" style="width:60%"></div></div><span class="stat-val">3/5</span></div>
+        <div class="stat-row"><span class="stat-label">DOM 統合</span><div class="stat-bar"><div class="stat-fill" style="width:80%"></div></div><span class="stat-val">4/5</span></div>
+      </div>
+
+      <div class="lib-card c-s reveal">
+        <div class="lc-name">CSS Only</div>
+        <div class="lc-type">CSS Anim / SVG Filter</div>
+        <div class="stat-row"><span class="stat-label">セットアップ</span><div class="stat-bar"><div class="stat-fill" style="width:80%"></div></div><span class="stat-val">4/5</span></div>
+        <div class="stat-row"><span class="stat-label">カスタマイズ</span><div class="stat-bar"><div class="stat-fill" style="width:60%"></div></div><span class="stat-val">3/5</span></div>
+        <div class="stat-row"><span class="stat-label">パフォーマンス</span><div class="stat-bar"><div class="stat-fill" style="width:40%"></div></div><span class="stat-val">2/5</span></div>
+        <div class="stat-row"><span class="stat-label">DOM 統合</span><div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div><span class="stat-val">5/5</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MATRIX -->
+  <section id="matrix" class="reveal">
+    <div class="sh"><span class="sh-num">02</span><h2 class="sh-title">多角的比較マトリックス</h2></div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>比較軸</th>
+            <th class="th-c">Curtains.js</th>
+            <th class="th-p">PixiJS</th>
+            <th class="th-j">jQuery Ripples</th>
+            <th class="th-s">CSS Only</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>技術基盤</td>
+            <td>WebGL + GLSL</td>
+            <td>WebGL2 / Canvas</td>
+            <td>WebGL (抽象化)</td>
+            <td>CSS / SVG Filter</td>
+          </tr>
+          <tr>
+            <td>セットアップ難易度</td>
+            <td><span class="dots" style="color:var(--curtains)"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></span></td>
+            <td><span class="dots" style="color:var(--pixi)"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></span></td>
+            <td><span class="dots" style="color:var(--jquery)"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></span></td>
+            <td><span class="dots" style="color:var(--css)"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></span></td>
+          </tr>
+          <tr>
+            <td>GLSL シェーダー制御</td>
+            <td><span class="badge by">✓ フル制御</span></td>
+            <td><span class="badge bp">△ Filter 経由</span></td>
+            <td><span class="badge bn">✗ 非対応</span></td>
+            <td><span class="badge bn">✗ 非対応</span></td>
+          </tr>
+          <tr>
+            <td>インタラクション</td>
+            <td>Mouse / Touch</td>
+            <td>Mouse / Touch (Pointer)</td>
+            <td>Mouse / Touch</td>
+            <td>Hover / Focus のみ</td>
+          </tr>
+          <tr>
+            <td>タッチ対応</td>
+            <td><span class="badge by">✓</span></td>
+            <td><span class="badge by">✓</span></td>
+            <td><span class="badge by">✓</span></td>
+            <td><span class="badge bp">△ Hover 不可</span></td>
+          </tr>
+          <tr>
+            <td>依存ライブラリ</td>
+            <td>curtainsjs のみ</td>
+            <td>pixi.js のみ</td>
+            <td>jQuery + plugin</td>
+            <td>不要</td>
+          </tr>
+          <tr>
+            <td>バンドルサイズ (gzip 目安)</td>
+            <td>~60 KB</td>
+            <td>~470 KB <span class="badge bp" style="font-size:0.6rem">v8: tree-shaking可</span></td>
+            <td>~90 KB (jQuery 込)</td>
+            <td>0 KB</td>
+          </tr>
+          <tr>
+            <td>DOM 要素へのマッピング</td>
+            <td><span class="badge by">✓ 完全対応</span></td>
+            <td><span class="badge bn">✗ Canvas 独立</span></td>
+            <td><span class="badge by">✓ bg-image</span></td>
+            <td><span class="badge by">✓ 完全対応</span></td>
+          </tr>
+          <tr>
+            <td>GPU アクセラレーション</td>
+            <td><span class="badge by">✓ WebGL</span></td>
+            <td><span class="badge by">✓ WebGL2</span></td>
+            <td><span class="badge bp">△ 解像度依存</span></td>
+            <td><span class="badge bp">△ 一部のみ</span></td>
+          </tr>
+          <tr>
+            <td>SSR / 静的サイト</td>
+            <td><span class="badge bp">△</span></td>
+            <td><span class="badge bp">△</span></td>
+            <td><span class="badge bn">✗</span></td>
+            <td><span class="badge by">✓</span></td>
+          </tr>
+          <tr>
+            <td>メンテナンス状況</td>
+            <td><span class="badge bn">停止</span> 最終 2024年</td>
+            <td><span class="badge by">活発</span> v8.18.1 / 2026.04</td>
+            <td><span class="badge bn">停止</span> 最終 2020年</td>
+            <td>ブラウザ標準 <span class="badge by" style="font-size:0.6rem">対応率 92%</span></td>
+          </tr>
+          <tr>
+            <td>学習コスト</td>
+            <td>高 (GLSL 必須)</td>
+            <td>中〜高</td>
+            <td>低</td>
+            <td>低〜中</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- JS LIBRARIES -->
+  <section id="js" class="reveal">
+    <div class="sh"><span class="sh-num">03</span><h2 class="sh-title">JS ライブラリ 詳細</h2></div>
+
+    <!-- Curtains.js -->
+    <div id="curtains-d">
+      <span class="approach-badge ab-c">◆ WebGL DOM Wrapper</span>
+      <h3 class="lib-title tc">Curtains.js</h3>
+      <p class="lib-desc">
+        DOM 要素（img / video）を WebGL のプレーンにマッピングし、カスタム GLSL シェーダーで加工できるライブラリ。
+        波紋マップを 2D Canvas で動的生成し、フラグメントシェーダーで UV 座標を歪めることで水面効果を実装。
+        DOM レイアウトとの同期が完全なため、スクロール・リサイズへの追従も容易。
+      </p>
+
+      <div class="cb">
+        <div class="cb-head">
+          <div class="cb-dots">
+            <div class="cb-dot" style="background:#ff5f57"></div>
+            <div class="cb-dot" style="background:#febc2e"></div>
+            <div class="cb-dot" style="background:#28c840"></div>
+          </div>
+          Fragment Shader — ノーマルマップによる歪み
+        </div>
+        <pre><code><span class="cm">// 波紋を UV 座標の歪みとして描画するフラグメントシェーダー</span>
+<span class="kw">precision</span> mediump <span class="kw">float</span>;
+<span class="kw">varying</span>  vec2 vTextureCoord;
+<span class="kw">uniform sampler2D</span> <span class="prop">uTexture</span>;       <span class="cm">// 元画像テクスチャ</span>
+<span class="kw">uniform sampler2D</span> <span class="prop">uDisplacement</span>;  <span class="cm">// 2D Canvas で生成した波紋マップ</span>
+
+<span class="kw">void</span> <span class="fn">main</span>() {
+  vec4 disp       = <span class="fn">texture2D</span>(<span class="prop">uDisplacement</span>, vTextureCoord);
+  vec2 distortion = (disp.rg - <span class="num">0.5</span>) * <span class="num">2.0</span>; <span class="cm">// [0,1] → [-1,1]</span>
+  vec2 finalUv    = vTextureCoord + distortion * <span class="num">0.04</span> * disp.a;
+  <span class="fn">gl_FragColor</span>    = <span class="fn">texture2D</span>(<span class="prop">uTexture</span>, finalUv);
+}</code></pre>
+      </div>
+
+      <div class="cb">
+        <div class="cb-head">
+          <div class="cb-dots">
+            <div class="cb-dot" style="background:#ff5f57"></div>
+            <div class="cb-dot" style="background:#febc2e"></div>
+            <div class="cb-dot" style="background:#28c840"></div>
+          </div>
+          JS — ブラシ生成 &amp; テクスチャ更新ループ
+        </div>
+        <pre><code><span class="cm">// ノーマルマップ状のブラシを Canvas で手書き生成</span>
+<span class="kw">const</span> imgData = bCtx.<span class="fn">createImageData</span>(brushSize, brushSize);
+<span class="kw">for</span> (<span class="kw">let</span> y = <span class="num">0</span>; y < brushSize; y++) {
+  <span class="kw">for</span> (<span class="kw">let</span> x = <span class="num">0</span>; x < brushSize; x++) {
+    <span class="kw">const</span> dx = x - radius, dy = y - radius;
+    <span class="kw">const</span> dist = <span class="fn">Math.sqrt</span>(dx*dx + dy*dy);
+    <span class="kw">const</span> i = (y * brushSize + x) * <span class="num">4</span>;
+    <span class="kw">if</span> (dist <= radius) {
+      imgData.data[i]   = (dx/radius + <span class="num">1</span>) / <span class="num">2</span> * <span class="num">255</span>; <span class="cm">// R → X 方向</span>
+      imgData.data[i+<span class="num">1</span>] = (dy/radius + <span class="num">1</span>) / <span class="num">2</span> * <span class="num">255</span>; <span class="cm">// G → Y 方向</span>
+      imgData.data[i+<span class="num">3</span>] = (<span class="num">1</span> - dist/radius) * <span class="num">255</span>;    <span class="cm">// A → 減衰</span>
+    }
+  }
+}
+
+<span class="cm">// フレームごとにテクスチャ更新を通知</span>
+plane.<span class="fn">onRender</span>(() => {
+  <span class="kw">if</span> (plane.textures?.length > <span class="num">1</span>) plane.textures[<span class="num">1</span>].<span class="fn">needUpdate</span>();
+});</code></pre>
+      </div>
+
+      <div class="pc-grid">
+        <div class="pc-card pc-pro">
+          <h4>✓ 長所</h4>
+          <ul>
+            <li>GLSL フルアクセス — GPU の全能力をシェーダーで制御</li>
+            <li>DOM 要素と WebGL が完全同期（スクロール・リサイズ追従）</li>
+            <li>2D Canvas でノーマルマップを動的生成できる柔軟性</li>
+            <li>マウス / タッチ両対応のインタラクション</li>
+            <li>バンドルサイズ比較的軽量（~60 KB gzip）</li>
+          </ul>
+        </div>
+        <div class="pc-card pc-con">
+          <h4>✗ 短所</h4>
+          <ul>
+            <li>GLSL の知識が必須 — 学習コストが最も高い</li>
+            <li>セットアップにシェーダー記述 + テクスチャ管理が必要</li>
+            <li>メンテナンス停止（最終リリース v8.1.6 / 2024年）</li>
+            <li>WebGL Inspector 必須でデバッグが煩雑</li>
+            <li>複雑なシーンでは手動リソース管理が必要</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- PixiJS -->
+    <div id="pixi-d">
+      <span class="approach-badge ab-p">◆ 2D Rendering Engine</span>
+      <h3 class="lib-title tp">PixiJS</h3>
+      <p class="lib-desc">
+        ゲームエンジン級の 2D レンダリングエンジン。WebGL2 をフル活用し、
+        RenderTexture に波紋ブラシを動的スタンプ → DisplacementFilter で背景画像を歪める方式。
+        スプライト・パーティクル・多段フィルターなどを自由に組み合わせられる。
+      </p>
+
+      <div class="cb">
+        <div class="cb-head">
+          <div class="cb-dots">
+            <div class="cb-dot" style="background:#ff5f57"></div>
+            <div class="cb-dot" style="background:#febc2e"></div>
+            <div class="cb-dot" style="background:#28c840"></div>
+          </div>
+          PixiJS — RenderTexture + DisplacementFilter
+        </div>
+        <pre><code><span class="cm">// 動的なディスプレイスメントマップ用テクスチャを作成</span>
+<span class="kw">const</span> renderTexture = PIXI.RenderTexture.<span class="fn">create</span>({
+  width: app.screen.width, height: app.screen.height
+});
+<span class="kw">const</span> dispFilter = <span class="kw">new</span> PIXI.<span class="fn">DisplacementFilter</span>(
+  <span class="kw">new</span> PIXI.<span class="fn">Sprite</span>(renderTexture)
+);
+dispFilter.scale.<span class="fn">set</span>(<span class="num">40</span>, <span class="num">40</span>); <span class="cm">// 屈折の強さ</span>
+app.stage.filters = [dispFilter];
+
+<span class="cm">// ポインター移動で波紋スタンプを追加</span>
+app.stage.<span class="fn">on</span>(<span class="str">'pointermove'</span>, (e) => {
+  <span class="kw">const</span> r = <span class="kw">new</span> PIXI.<span class="fn">Sprite</span>(brushTexture);
+  r.anchor.<span class="fn">set</span>(<span class="num">0.5</span>);
+  r.x = e.global.x; r.y = e.global.y;
+  r.scale.<span class="fn">set</span>(<span class="num">0.2</span>); r.alpha = <span class="num">1</span>;
+  rippleContainer.<span class="fn">addChild</span>(r);
+  ripples.<span class="fn">push</span>(r);
+});
+
+<span class="cm">// 毎フレーム: 波を広げて RenderTexture に焼き付ける</span>
+app.ticker.<span class="fn">add</span>(() => {
+  ripples.<span class="fn">forEach</span>((r, i) => {
+    r.scale.x += <span class="num">0.03</span>; r.scale.y += <span class="num">0.03</span>;
+    r.alpha   -= <span class="num">0.03</span>;
+    <span class="kw">if</span> (r.alpha <= <span class="num">0</span>) { rippleContainer.<span class="fn">removeChild</span>(r); ripples.<span class="fn">splice</span>(i,<span class="num">1</span>); }
+  });
+  app.renderer.<span class="fn">render</span>(rippleContainer, { renderTexture, clear: <span class="kw">true</span> });
+});</code></pre>
+      </div>
+
+      <div class="pc-grid">
+        <div class="pc-card pc-pro">
+          <h4>✓ 長所</h4>
+          <ul>
+            <li>最高レベルのレンダリングパフォーマンス（WebGL2 最適化）</li>
+            <li>Blur / Displacement / ColorMatrix など Filter が標準搭載</li>
+            <li>RenderTexture で動的テクスチャ生成が簡単</li>
+            <li>Pointer Events API で統一されたマウス / タッチ操作</li>
+            <li>活発なエコシステム（v8.18.1 / 2026年4月も継続リリース）</li>
+          </ul>
+        </div>
+        <div class="pc-card pc-con">
+          <h4>✗ 短所</h4>
+          <ul>
+            <li>フルインポートで ~470 KB gzip（v8 tree-shaking で大幅削減可）</li>
+            <li>DOM 要素との統合が難しい（Canvas が独立して存在）</li>
+            <li>水面特化でなく汎用エンジンなので実装量が多い</li>
+            <li>HTML コンテンツとの z-index 管理が必要</li>
+            <li>v7→v8 で破壊的変更（DisplacementFilter の API も変更 / 当デモは v7 ベース）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- jQuery Ripples -->
+    <div id="jquery-d">
+      <span class="approach-badge ab-j">◆ jQuery Plugin</span>
+      <h3 class="lib-title tj">jQuery Ripples</h3>
+      <p class="lib-desc">
+        最も手軽な水面波紋ライブラリ。WebGL による物理ベースの水面シミュレーション（反射・屈折）を
+        わずか 4〜5 行で実装できる。background-image の DOM 要素に直接適用可能で、
+        既存サイトへの追加コストが最も低い。
+      </p>
+
+      <div class="cb">
+        <div class="cb-head">
+          <div class="cb-dots">
+            <div class="cb-dot" style="background:#ff5f57"></div>
+            <div class="cb-dot" style="background:#febc2e"></div>
+            <div class="cb-dot" style="background:#28c840"></div>
+          </div>
+          jQuery Ripples — 最小実装
+        </div>
+        <pre><code><span class="cm">// これだけで物理シミュレーション付きの水面エフェクト完成</span>
+$(<span class="str">'#canvas-bg'</span>).<span class="fn">ripples</span>({
+  resolution:  <span class="num">512</span>,   <span class="cm">// テクスチャ解像度（高いほど重い）</span>
+  dropRadius:  <span class="num">20</span>,    <span class="cm">// 波紋の半径 (px)</span>
+  perturbance: <span class="num">0.04</span>,  <span class="cm">// 屈折の強さ (0 〜 1)</span>
+  interactive: <span class="kw">true</span>   <span class="cm">// マウス / タッチ操作を有効化</span>
+});
+
+<span class="cm">// 任意の位置に波紋を追加 (雨・クリック等)</span>
+$(<span class="str">'#canvas-bg'</span>).<span class="fn">ripples</span>(<span class="str">'drop'</span>, x, y, radius, strength);</code></pre>
+      </div>
+
+      <div class="pc-grid">
+        <div class="pc-card pc-pro">
+          <h4>✓ 長所</h4>
+          <ul>
+            <li>実装が超シンプル — 数行でプロ級の波紋エフェクト</li>
+            <li>物理ベースの水面シミュレーション（波の伝播が自然）</li>
+            <li>background-image 要素に直接適用 — DOM 変更不要</li>
+            <li>drop() API で雨・クリックなど外部トリガーも可能</li>
+            <li>既存 jQuery サイトへの追加が最も容易</li>
+          </ul>
+        </div>
+        <div class="pc-card pc-con">
+          <h4>✗ 短所</h4>
+          <ul>
+            <li>jQuery への依存（現代的プロジェクトとの相性が悪い）</li>
+            <li>ライブラリ実質停止（最終リリース v0.6.3 / 2020年、以降更新なし）</li>
+            <li>カスタマイズ性が低い（設定パラメーターが 4 つのみ）</li>
+            <li>シェーダーへのアクセス不可</li>
+            <li>高解像度設定でモバイルパフォーマンスが低下する</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CSS -->
+  <section id="css" class="reveal">
+    <div class="sh"><span class="sh-num">04</span><h2 class="sh-title">CSS アプローチ</h2></div>
+    <span class="approach-badge ab-s">◆ Zero JavaScript</span>
+    <p class="lib-desc" style="margin-top:0.75rem">
+      JS なしでも波紋・液体・歪みエフェクトを近似的に表現できる手法。
+      動的なマウス追従は不可だが、静的・ホバー限定の演出や SSR 環境では有効な選択肢。
+    </p>
+
+    <!-- CSS 技術 ライブプレビュー（実際に動いているデモ） -->
+    <div class="css-live-demos">
+      <div class="css-live-card">
+        <div class="css-live-label">① @keyframes — 波紋リング（live）</div>
+        <div class="css-live-preview preview-kf">
+          <span class="p-ring"></span>
+          <span class="p-ring"></span>
+          <span class="p-ring"></span>
+        </div>
+      </div>
+      <div class="css-live-card">
+        <div class="css-live-label">② backdrop-filter — ガラス（live）</div>
+        <div class="css-live-preview preview-bd">
+          <span class="preview-bd-text">backdrop-filter</span>
+        </div>
+      </div>
+      <div class="css-live-card">
+        <div class="css-live-label">③ SVG feTurbulence — 歪み（live）</div>
+        <div class="css-live-preview preview-svgf">
+          <span class="preview-svgf-text">水面</span>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="font-family:'Syne',sans-serif; font-size:0.95rem; color:var(--css); margin-bottom:0.7rem;">① @keyframes — 同心円波紋リング</h4>
+    <div class="cb">
+      <div class="cb-head">
+        <div class="cb-dots">
+          <div class="cb-dot" style="background:#ff5f57"></div>
+          <div class="cb-dot" style="background:#febc2e"></div>
+          <div class="cb-dot" style="background:#28c840"></div>
+        </div>
+        CSS — 擬似要素で波紋リングを生成
+      </div>
+      <pre><code><span class="cm">/* 擬似要素 2 枚をずらして同心円を作る */</span>
+.<span class="prop">ripple</span>::<span class="kw">before</span>, .<span class="prop">ripple</span>::<span class="kw">after</span> {
+  content: <span class="str">''</span>;
+  position: absolute; inset: <span class="num">0</span>;
+  border-radius: <span class="num">50%</span>;
+  border: <span class="num">2</span>px solid rgba(<span class="num">255</span>,<span class="num">255</span>,<span class="num">255</span>,<span class="num">0.6</span>);
+  animation: <span class="prop">rippleOut</span> <span class="num">2</span>s linear infinite;
+}
+.<span class="prop">ripple</span>::<span class="kw">after</span> { animation-delay: <span class="num">1</span>s; }
+
+<span class="kw">@keyframes</span> <span class="prop">rippleOut</span> {
+  <span class="kw">from</span> { transform: scale(<span class="num">1</span>);   opacity: <span class="num">1</span>; }
+  <span class="kw">to</span>   { transform: scale(<span class="num">2.8</span>); opacity: <span class="num">0</span>; }
+}</code></pre>
+    </div>
+
+    <h4 style="font-family:'Syne',sans-serif; font-size:0.95rem; color:var(--css); margin:1.5rem 0 0.7rem">② backdrop-filter — ガラス / 歪みエフェクト</h4>
+    <div class="cb">
+      <div class="cb-head">
+        <div class="cb-dots">
+          <div class="cb-dot" style="background:#ff5f57"></div>
+          <div class="cb-dot" style="background:#febc2e"></div>
+          <div class="cb-dot" style="background:#28c840"></div>
+        </div>
+        CSS — backdrop-filter blur + saturate
+      </div>
+      <pre><code><span class="cm">/* 背景を光学ガラス越しに見せる（グローバル対応率 92% / 2026年5月） */</span>
+.<span class="prop">glass</span> {
+  <span class="cm">/* Safari 18 以前は -webkit- prefix が必要 */</span>
+  -webkit-backdrop-filter: blur(<span class="num">12</span>px) saturate(<span class="num">150</span>%) brightness(<span class="num">110</span>%);
+          backdrop-filter: blur(<span class="num">12</span>px) saturate(<span class="num">150</span>%) brightness(<span class="num">110</span>%);
+  background: rgba(<span class="num">255</span>,<span class="num">255</span>,<span class="num">255</span>,<span class="num">0.06</span>);
+  border: <span class="num">1</span>px solid rgba(<span class="num">255</span>,<span class="num">255</span>,<span class="num">255</span>,<span class="num">0.12</span>);
+  transition: backdrop-filter <span class="num">0.4</span>s ease;
+}
+.<span class="prop">glass</span>:<span class="kw">hover</span> {
+  -webkit-backdrop-filter: blur(<span class="num">24</span>px) saturate(<span class="num">200</span>%);
+          backdrop-filter: blur(<span class="num">24</span>px) saturate(<span class="num">200</span>%);
+}
+<span class="cm">/* ⚠ CSS 変数は -webkit-backdrop-filter では未サポート（Safari 制限） */</span></code></pre>
+    </div>
+
+    <h4 style="font-family:'Syne',sans-serif; font-size:0.95rem; color:var(--css); margin:1.5rem 0 0.7rem">③ SVG feTurbulence — 有機的ノイズ歪み</h4>
+    <div class="cb">
+      <div class="cb-head">
+        <div class="cb-dots">
+          <div class="cb-dot" style="background:#ff5f57"></div>
+          <div class="cb-dot" style="background:#febc2e"></div>
+          <div class="cb-dot" style="background:#28c840"></div>
+        </div>
+        SVG Filter + CSS — 液体的な歪みアニメーション
+      </div>
+      <pre><code>&lt;svg style=<span class="str">"display:none"</span>&gt;
+  &lt;filter id=<span class="str">"liquid"</span>&gt;
+    &lt;feTurbulence type=<span class="str">"fractalNoise"</span>
+      baseFrequency=<span class="str">"0.015"</span> numOctaves=<span class="str">"3"</span> seed=<span class="str">"2"</span> result=<span class="str">"noise"</span>&gt;
+      &lt;animate attributeName=<span class="str">"baseFrequency"</span>
+        values=<span class="str">"0.01;0.02;0.01"</span> dur=<span class="str">"4s"</span> repeatCount=<span class="str">"indefinite"</span>/&gt;
+    &lt;/feTurbulence&gt;
+    &lt;feDisplacementMap in=<span class="str">"SourceGraphic"</span> in2=<span class="str">"noise"</span>
+      scale=<span class="str">"20"</span> xChannelSelector=<span class="str">"R"</span> yChannelSelector=<span class="str">"G"</span>/&gt;
+  &lt;/filter&gt;
+&lt;/svg&gt;
+
+<span class="cm">/* CSS で適用 — JS 不要 */</span>
+.<span class="prop">liquid-morph</span> { filter: url(<span class="str">#liquid</span>); }</code></pre>
+    </div>
+
+    <div class="pc-grid" style="margin-top:1.25rem">
+      <div class="pc-card pc-pro">
+        <h4>✓ CSS の強み</h4>
+        <ul>
+          <li>ゼロ依存 — バンドルサイズへの影響なし</li>
+          <li>SSR / 静的サイトで完全動作（Next.js, Astro 等）</li>
+          <li>backdrop-filter は GPU アクセラレーション対応</li>
+          <li>宣言的なため保守・変更が容易</li>
+          <li>アクセシビリティ対応が自然（reduced-motion 対応しやすい）</li>
+        </ul>
+      </div>
+      <div class="pc-card pc-con">
+        <h4>✗ CSS の限界</h4>
+        <ul>
+          <li>マウス追従型の動的波紋は JS なしでは不可能</li>
+          <li>SVG feTurbulence は大きい要素で CPU 負荷大</li>
+          <li>ピクセル単位の制御は WebGL に劣る</li>
+          <li>複雑な物理シミュレーション（波の伝播など）は再現不可</li>
+          <li>ブラウザ間の filter 実装差異に注意が必要</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION -->
+  <section id="rec" class="reveal">
+    <div class="sh"><span class="sh-num">05</span><h2 class="sh-title">ユースケース別 推奨</h2></div>
+
+    <div class="rec-grid">
+      <div class="rec-card" style="border-top:2px solid var(--curtains)">
+        <h4 style="color:var(--curtains)">GPU 全力・独自エフェクト</h4>
+        <p>GLSL シェーダーを完全制御したい、DOM 要素に独自 WebGL エフェクトを重ねたいケース</p>
+        <span class="rec-lib" style="background:rgba(167,139,250,0.1); color:var(--curtains)">→ Curtains.js</span>
+      </div>
+      <div class="rec-card" style="border-top:2px solid var(--pixi)">
+        <h4 style="color:var(--pixi)">インタラクティブ体験・ゲーム UI</h4>
+        <p>スプライト・パーティクル・多重フィルターを組み合わせた複雑なビジュアルが必要なケース</p>
+        <span class="rec-lib" style="background:rgba(96,165,250,0.1); color:var(--pixi)">→ PixiJS</span>
+      </div>
+      <div class="rec-card" style="border-top:2px solid var(--jquery)">
+        <h4 style="color:var(--jquery)">既存サイトへ即追加・PoC</h4>
+        <p>jQuery 環境に手軽に波紋を追加したい、プロトタイプや検証目的のレガシー案件</p>
+        <span class="rec-lib" style="background:rgba(52,211,153,0.1); color:var(--jquery)">→ jQuery Ripples</span>
+      </div>
+      <div class="rec-card" style="border-top:2px solid var(--css)">
+        <h4 style="color:var(--css)">軽量・静的・アクセシブル</h4>
+        <p>ゼロ JS、SSR 対応、インタラクション不要の装飾的エフェクト。ローディングや背景演出</p>
+        <span class="rec-lib" style="background:rgba(251,146,60,0.1); color:var(--css)">→ CSS Only</span>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <h4>検証まとめ</h4>
+      <p>
+        <strong style="color:var(--jquery)">jQuery Ripples</strong> は最も手軽だが、jQuery 依存 + 事実上停止（最終 v0.6.3 / 2020年）というリスクがありプロダクション採用は慎重に。
+        <strong style="color:var(--pixi)">PixiJS</strong> は v8.18（2026年4月）まで活発に開発が続いており、tree-shaking 対応で軽量化も可能。ただし v7→v8 で破壊的変更があるため既存コードの移行コストに注意。
+        <strong style="color:var(--curtains)">Curtains.js</strong> は GPU 制御の自由度が最高で DOM 要素との統合が容易だが、2024年を最後に開発停止しており長期採用はリスクがある。
+        <strong style="color:var(--css)">CSS</strong> はゼロコストで近似表現が可能だが、動的インタラクションには根本的な限界がある。<br><br>
+        プロダクション環境では <strong style="color:var(--pixi)">PixiJS</strong> または <strong style="color:var(--curtains)">Curtains.js</strong> の二択、
+        素早いプロトタイプには <strong style="color:var(--jquery)">jQuery Ripples</strong>、
+        ゼロ JS 環境では <strong style="color:var(--css)">CSS + SVG feTurbulence</strong> の組み合わせが推奨される。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>webgl-survey — 2026-05-10 — 検証バージョン: curtains.js 8.1.2 / pixi.js 7.3.2 / jquery.ripples 0.5.3 &nbsp;|&nbsp; 最新: curtainsjs 8.1.6 / pixi.js 8.18.1 / jquery.ripples 0.6.3</p>
+</footer>
+
+<script>
+  // ② JS canvas ripple — ヒーローセクションにマウス追従の波紋（JS技術のページ内実装）
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const hero = canvas.closest('section');
+  const ctx = canvas.getContext('2d');
+  const ripples = [];
+
+  function resize() {
+    canvas.width  = hero.offsetWidth;
+    canvas.height = hero.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  hero.addEventListener('mousemove', (e) => {
+    const rect = hero.getBoundingClientRect();
+    ripples.push({ x: e.clientX - rect.left, y: e.clientY - rect.top, r: 3, alpha: 0.55 });
+  });
+
+  const colors = ['167,139,250', '96,165,250', '52,211,153'];
+  let colorIdx = 0;
+
+  (function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const p = ripples[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${colors[i % 3]},${p.alpha.toFixed(2)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      p.r     += 2.2;
+      p.alpha -= 0.013;
+      if (p.alpha <= 0) ripples.splice(i, 1);
+    }
+    requestAnimationFrame(draw);
+  })();
+})();
+
+// Demo tab switcher
+  const demoTabs = document.querySelectorAll('.demo-tab');
+  const demoFrame = document.getElementById('demo-frame');
+  const demoOpen = document.getElementById('demo-open');
+  const demoLoading = document.getElementById('demo-loading');
+  let activeSrc = 'curtainsjs/index.html';
+
+  demoTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const src = tab.dataset.src;
+      if (src === activeSrc) return;
+      activeSrc = src;
+
+      demoTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      demoFrame.classList.add('fading');
+      demoLoading.classList.add('show');
+      demoOpen.href = src;
+
+      setTimeout(() => { demoFrame.src = src; }, 240);
+    });
+  });
+
+  demoFrame.addEventListener('load', () => {
+    demoFrame.classList.remove('fading');
+    demoLoading.classList.remove('show');
+  });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        e.target.style.transitionDelay = `${i * 0.04}s`;
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
