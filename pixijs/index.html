@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>PixiJS Fluid Ripple</title>
+    <style>
+        body, html { margin: 0; overflow: hidden; background: #000; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    
+    <script>
+        window.addEventListener('load', () => {
+            const app = new PIXI.Application({
+                width: window.innerWidth,
+                height: window.innerHeight,
+                resizeTo: window
+            });
+            document.body.appendChild(app.view);
+
+            // 1. 背景画像の読み込み
+            const bgTexture = PIXI.Texture.from('https://images.unsplash.com/photo-1518837695005-2083093ee35b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+            const bgSprite = new PIXI.Sprite(bgTexture);
+            bgSprite.width = app.screen.width;
+            bgSprite.height = app.screen.height;
+            app.stage.addChild(bgSprite);
+
+            // ----------------------------------------------------
+            // ここから「jquery.ripples」のような水面を標準機能で作るロジック
+            // ----------------------------------------------------
+
+            // 2. 水の波紋（外側に水を押し出すような歪み）のブラシをプログラムで作る
+            const radius = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = radius * 2; canvas.height = radius * 2;
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.createImageData(radius * 2, radius * 2);
+            
+            for (let y = 0; y < radius * 2; y++) {
+                for (let x = 0; x < radius * 2; x++) {
+                    const dx = x - radius;
+                    const dy = y - radius;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const i = (y * radius * 2 + x) * 4;
+                    
+                    if (dist <= radius) {
+                        // 中心からの方向を計算して色（ノーマルマップ）に変換
+                        imgData.data[i] = (dx / radius + 1) / 2 * 255;     // Red (横方向の歪み)
+                        imgData.data[i+1] = (dy / radius + 1) / 2 * 255;   // Green (縦方向の歪み)
+                        imgData.data[i+2] = 128;                           // Blue (使わない)
+                        imgData.data[i+3] = (1 - dist / radius) * 255;     // 外側ほど薄く(Alpha)
+                    }
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            const brushTexture = PIXI.Texture.from(canvas);
+
+            // 3. 歪みをリアルタイムに書き込むためのテクスチャ（RenderTexture）
+            const renderTexture = PIXI.RenderTexture.create({ width: app.screen.width, height: app.screen.height });
+            
+            // これを変位（Displacement）フィルターとして適用
+            const displacementSprite = new PIXI.Sprite(renderTexture);
+            const displacementFilter = new PIXI.DisplacementFilter(displacementSprite);
+            displacementFilter.scale.set(40, 40); // 波の屈折の強さ
+            app.stage.filters = [displacementFilter];
+
+            // 4. マウスの軌跡にスタンプを押すためのコンテナ
+            const rippleContainer = new PIXI.Container();
+            
+            // ベースの色（RGB(128,128,128) は変位フィルターにおいて「歪みゼロ・平らな水面」を意味する）
+            const baseGraphic = new PIXI.Graphics();
+            baseGraphic.beginFill(0x808080);
+            baseGraphic.drawRect(0, 0, app.screen.width, app.screen.height);
+            baseGraphic.endFill();
+            rippleContainer.addChild(baseGraphic);
+
+            const ripples = []; 
+
+            // スワイプ・マウス移動で波紋ブラシを配置
+            app.stage.eventMode = 'static';
+            app.stage.hitArea = app.screen;
+            app.stage.on('pointermove', (e) => {
+                const ripple = new PIXI.Sprite(brushTexture);
+                ripple.anchor.set(0.5);
+                ripple.x = e.global.x;
+                ripple.y = e.global.y;
+                ripple.scale.set(0.2); // 最初は小さい波
+                ripple.alpha = 1;      // 最初はくっきり
+                
+                rippleContainer.addChild(ripple);
+                ripples.push(ripple);
+            });
+
+            // 5. 毎フレームのアニメーション
+            app.ticker.add(() => {
+                // 古い波紋から順番に処理
+                for (let i = ripples.length - 1; i >= 0; i--) {
+                    const r = ripples[i];
+                    r.scale.x += 0.03; // 波が広がる
+                    r.scale.y += 0.03;
+                    r.alpha -= 0.03;   // 波がスゥーッと消えていく
+
+                    // 完全に消えたら配列と画面から削除
+                    if (r.alpha <= 0) {
+                        rippleContainer.removeChild(r);
+                        ripples.splice(i, 1);
+                    }
+                }
+
+                // コンテナの中身（ベースのグレー ＋ 無数の波紋）をRenderTextureに焼き付ける
+                app.renderer.render(rippleContainer, { renderTexture, clear: true });
+            });
+        });
+    </script>
+</body>
+</html>
