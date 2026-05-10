@@ -61,7 +61,7 @@ npx serve
 
 MIT License. 自由に変更・商用利用いただけます。
 
-## ファイル構成の例
+## ファイル構成
 
 リポジトリは以下のような構成です。
 
@@ -73,6 +73,8 @@ MIT License. 自由に変更・商用利用いただけます。
 │   └── index.html
 ├── pixijs/
 │   └── index.html
+├── .gitignore
+├── index.html
 ├── README.md
 └── webgl.htm
 ```
