@@ -78,3 +78,18 @@ MIT License. 自由に変更・商用利用いただけます。
 ├── README.md
 └── webgl.htm
 ```
+
+## Install as a skill / スキルとして導入
+
+This repo also ships a cross-agent **`SKILL.md`** (open standard) usable by both Claude Code and Codex CLI. Link the repo into the agent's skills directory:
+
+このリポジトリは Claude Code / Codex CLI 共通の **`SKILL.md`**（オープン標準）も同梱しています。
+
+```bash
+# Claude Code
+ln -s "$(pwd)" ~/.claude/skills/webgl-water-ripple
+# Codex CLI
+ln -s "$(pwd)" ~/.codex/skills/webgl-water-ripple
+```
+
+Restart the agent; it is matched automatically by the skill's `description` (skill name: `webgl-water-ripple`). / エージェント再起動後、`description` に基づき自動マッチします。
