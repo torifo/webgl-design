@@ -57,6 +57,7 @@
     nav {
       position: sticky; top: 0; z-index: 100;
       background: rgba(7,8,15,0.85);
+      -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       padding: 0 2rem;
@@ -68,11 +69,17 @@
       font-size: 0.72rem; color: var(--text-muted);
       white-space: nowrap; letter-spacing: 0.05em;
     }
-    .nav-links { display: flex; gap: 0.25rem; list-style: none; margin-left: auto; }
+    .nav-links {
+      display: flex; gap: 0.25rem; list-style: none; margin-left: auto;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; min-width: 0;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
     .nav-links a {
       font-size: 0.78rem; color: var(--text-muted);
       text-decoration: none; padding: 0.3rem 0.65rem;
       border-radius: 5px; transition: all 0.15s;
+      white-space: nowrap; display: inline-block;
     }
     .nav-links a:hover { color: var(--text); background: var(--surface); }
     .nav-dot {
@@ -180,9 +187,9 @@
     }
 
     /* COMPARISON TABLE */
-    .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; }
     .tbl {
-      width: 100%; border-collapse: collapse; font-size: 0.85rem;
+      width: 100%; min-width: 720px; border-collapse: collapse; font-size: 0.85rem;
     }
     .tbl th, .tbl td {
       padding: 0.85rem 1.1rem; text-align: center;
@@ -343,9 +350,9 @@
     }
 
     /* ③ backdrop-filter — カードにガラス効果 */
-    .pc-card    { backdrop-filter: blur(4px) saturate(130%); }
-    .summary-box { backdrop-filter: blur(6px) saturate(130%); }
-    .rec-card   { backdrop-filter: blur(4px) saturate(120%); }
+    .pc-card    { -webkit-backdrop-filter: blur(4px) saturate(130%); backdrop-filter: blur(4px) saturate(130%); }
+    .summary-box { -webkit-backdrop-filter: blur(6px) saturate(130%); backdrop-filter: blur(6px) saturate(130%); }
+    .rec-card   { -webkit-backdrop-filter: blur(4px) saturate(120%); backdrop-filter: blur(4px) saturate(120%); }
 
     /* CSS技術ライブプレビューカード */
     .css-live-demos {
@@ -455,6 +462,7 @@
       border: 1px solid var(--border); border-radius: 5px;
       padding: 0.25rem 0.65rem; text-decoration: none;
       pointer-events: all; transition: color 0.15s, border-color 0.15s;
+      -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
     }
     .demo-open:hover { color: var(--text); border-color: var(--border-bright); }
@@ -470,6 +478,38 @@
       animation: spin 0.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MOBILE ADJUSTMENTS */
+    @media (max-width: 768px) {
+      nav { padding: 0 1rem; gap: 0.75rem; }
+      main { padding: 0 1.25rem; }
+      section { padding: 3.5rem 0; }
+      .hero { padding: 4.5rem 0 3.5rem; }
+      .hero-title { font-size: clamp(2rem, 9.5vw, 2.8rem); }
+      .hero-desc { font-size: 0.92rem; }
+      .sh { flex-wrap: wrap; column-gap: 0.75rem; row-gap: 0.2rem; }
+      .sh-title { font-size: 1.4rem; }
+      .divider { margin: 2.25rem 0; }
+      .demo-frame-wrap { height: 60vh; min-height: 340px; }
+      .demo-hint { display: none; }
+      .demo-bar { justify-content: flex-end; }
+      pre { padding: 1rem; font-size: 0.72rem; }
+      .summary-box { padding: 1.25rem; }
+      footer { padding: 1.5rem 1.25rem; }
+    }
+    @media (max-width: 480px) {
+      /* 狭い画面では keep-all だと日本語が折り返せず横スクロールが発生するため緩和 */
+      body, p, li, td, th, .lib-desc, .sh-sub, .summary-box p, .rec-card p, .pc-card li {
+        word-break: normal; line-break: normal; overflow-wrap: anywhere;
+      }
+    }
+    @media (max-width: 420px) {
+      .nav-logo { display: none; }
+      .nav-links { margin-left: 0; }
+      .chip { font-size: 0.64rem; padding: 0.24rem 0.6rem; }
+      .lib-card, .pc-card, .rec-card { padding: 1.1rem; }
+      .stat-label { width: 80px; }
+    }
   </style>
 </head>
 <body>
